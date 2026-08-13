@@ -1,4 +1,4 @@
-from zotlocal.models import citekey_from_data, format_authors, year_from_date
+from zotlocal.models import Tag, citekey_from_data, format_authors, year_from_date
 
 
 def test_citekey_from_data_reads_extra() -> None:
@@ -22,3 +22,16 @@ def test_format_authors_et_al() -> None:
 
 def test_year_from_date() -> None:
     assert year_from_date("2017-06-12") == "2017"
+
+
+def test_tag_from_local_api_object() -> None:
+    tag = Tag.from_api(
+        {
+            "tag": "LLM agents",
+            "links": {"self": {"href": "https://example.invalid/tags/LLM+agents"}},
+            "meta": {"type": 1, "numItems": 3},
+        }
+    )
+    assert tag.name == "LLM agents"
+    assert tag.count == 3
+    assert "href" not in tag.name

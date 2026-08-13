@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 — 2026-08-13
+
+- Parse Zotero Desktop tag objects (`tag` + `meta.numItems`) so `tags` prints names, not raw dicts
+
 ## 0.1.0 — 2026-08-13
 
 First release.

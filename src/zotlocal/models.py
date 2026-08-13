@@ -107,13 +107,26 @@ class Tag:
     count: int = 0
 
     @classmethod
-    def from_api(cls, payload: dict[str, Any]) -> "Tag":
+    def from_api(cls, payload: dict[str, Any] | str) -> "Tag":
         if isinstance(payload, str):
             return cls(name=payload)
-        data = payload.get("tag") or payload.get("data") or payload
-        if isinstance(data, dict):
-            name = str(data.get("tag") or data.get("name") or "")
-            meta = payload.get("meta") if isinstance(payload.get("meta"), dict) else {}
-            count = int(meta.get("numItems") or data.get("numItems") or 0)
-            return cls(name=name, count=count)
-        return cls(name=str(payload))
+        if not isinstance(payload, dict):
+            return cls(name=str(payload))
+        tag_field = payload.get("tag")
+        if isinstance(tag_field, str) and tag_field.strip():
+            name = tag_field.strip()
+        else:
+            data = payload.get("data")
+            if isinstance(data, dict):
+                name = str(data.get("tag") or data.get("name") or "").strip()
+            else:
+                name = str(payload.get("name") or "").strip()
+        meta = payload.get("meta") if isinstance(payload.get("meta"), dict) else {}
+        raw_count = meta.get("numItems")
+        if raw_count is None:
+            raw_count = payload.get("numItems") or 0
+        try:
+            count = int(raw_count)
+        except (TypeError, ValueError):
+            count = 0
+        return cls(name=name, count=count)
