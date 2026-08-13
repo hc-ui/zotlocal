@@ -1,0 +1,63 @@
+[
+  {
+    "key": "PXW99EKT",
+    "version": 42,
+    "data": {
+      "key": "PXW99EKT",
+      "version": 42,
+      "itemType": "journalArticle",
+      "title": "Attention Is All You Need",
+      "date": "2017-06-12",
+      "creators": [
+        {"creatorType": "author", "firstName": "Ashish", "lastName": "Vaswani"},
+        {"creatorType": "author", "firstName": "Noam", "lastName": "Shazeer"},
+        {"creatorType": "author", "firstName": "Niki", "lastName": "Parmar"},
+        {"creatorType": "author", "firstName": "Jakob", "lastName": "Uszkoreit"},
+        {"creatorType": "author", "firstName": "Llion", "lastName": "Jones"},
+        {"creatorType": "author", "firstName": "Aidan N.", "lastName": "Gomez"},
+        {"creatorType": "author", "firstName": "Lukasz", "lastName": "Kaiser"},
+        {"creatorType": "author", "firstName": "Illia", "lastName": "Polosukhin"}
+      ],
+      "publicationTitle": "Advances in Neural Information Processing Systems",
+      "extra": "Citation Key: vaswani_attention_2017",
+      "collections": ["COLLBBBB"],
+      "tags": [{"tag": "transformers"}],
+      "dateAdded": "2020-01-01T00:00:00Z",
+      "dateModified": "2020-01-02T00:00:00Z"
+    }
+  },
+  {
+    "key": "BERT0001",
+    "version": 10,
+    "data": {
+      "key": "BERT0001",
+      "version": 10,
+      "itemType": "preprint",
+      "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+      "date": "2018",
+      "creators": [
+        {"creatorType": "author", "firstName": "Jacob", "lastName": "Devlin"},
+        {"creatorType": "author", "firstName": "Ming-Wei", "lastName": "Chang"}
+      ],
+      "extra": "",
+      "dateAdded": "2020-02-01T00:00:00Z",
+      "dateModified": "2020-02-02T00:00:00Z"
+    }
+  },
+  {
+    "key": "PDFATT01",
+    "version": 3,
+    "data": {
+      "key": "PDFATT01",
+      "version": 3,
+      "itemType": "attachment",
+      "title": "Attention Is All You Need.pdf",
+      "parentItem": "PXW99EKT",
+      "linkMode": "imported_file",
+      "contentType": "application/pdf",
+      "filename": "Attention Is All You Need.pdf",
+      "dateAdded": "2020-01-01T00:00:00Z",
+      "dateModified": "2020-01-01T00:00:00Z"
+    }
+  }
+]

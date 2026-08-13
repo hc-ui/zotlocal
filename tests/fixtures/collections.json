@@ -1,0 +1,20 @@
+[
+  {
+    "key": "COLLAAAA",
+    "version": 1,
+    "data": {
+      "key": "COLLAAAA",
+      "name": "A",
+      "parentCollection": false
+    }
+  },
+  {
+    "key": "COLLBBBB",
+    "version": 1,
+    "data": {
+      "key": "COLLBBBB",
+      "name": "B",
+      "parentCollection": "COLLAAAA"
+    }
+  }
+]

@@ -1,0 +1,11 @@
+# Changelog
+
+## 0.1.0 — 2026-08-13
+
+First release.
+
+- Read-only CLI for Zotero Desktop’s local API on `127.0.0.1:23119`
+- Commands: `doctor`, `search`, `item`, `collections`, `collection`, `tags`, `bib`, `pdf`, `recent`, `cite`
+- Global flags: `--json`, `--port`, `--timeout`, `--limit`
+- Citekeys taken from Better BibTeX (`citationKey` or Extra); never invented
+- No Web API key, no `prefs.js`, no library writes
