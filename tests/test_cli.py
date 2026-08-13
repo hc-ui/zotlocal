@@ -72,3 +72,56 @@ def test_bib_prints_mocked_bibtex(
     assert code == 0
     assert "@article" in text
     assert "vaswani_attention_2017" in text
+
+
+def test_show_prints_card(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("show", "PXW99EKT"))
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "Attention Is All You Need" in text
+    assert "10.5555/3295222.3295349" in text
+
+
+def test_csl_prints_formatted_citation(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("csl", "PXW99EKT", "--style", "apa"))
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "Vaswani" in text
+    assert "2017" in text
+
+
+def test_stats_and_types(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    assert run_cli(_args("stats")) == 0
+    out = capsys.readouterr().out
+    assert "journalArticle" in out
+    assert run_cli(_args("types")) == 0
+    assert "journalArticle" in capsys.readouterr().out
+
+
+def test_notes_and_doi(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    assert run_cli(_args("notes", "PXW99EKT")) == 0
+    notes = capsys.readouterr().out
+    assert "NOTE0001" in notes
+    assert "attention" in notes.lower()
+    assert run_cli(_args("doi", "PXW99EKT")) == 0
+    assert "10.5555" in capsys.readouterr().out

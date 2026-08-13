@@ -155,6 +155,14 @@ def library_routes(
             return 200, "application/x-bibtex", BIBTEX
         return 200, "application/json", top_level
 
+    def _item_pxw(request: urllib.request.Request) -> Any:
+        query = urllib.parse.parse_qs(urllib.parse.urlsplit(request.full_url).query)
+        if "citation" in (query.get("include", [""])[0] or ""):
+            row = dict(parent)
+            row["citation"] = "(Vaswani et al., 2017)"
+            return 200, "application/json", row
+        return 200, "application/json", parent
+
     def items_list(request: urllib.request.Request) -> Any:
         query = urllib.parse.parse_qs(urllib.parse.urlsplit(request.full_url).query)
         if query.get("format", [""])[0] == "bibtex":
@@ -170,7 +178,13 @@ def library_routes(
             "application/json",
             children,
         ),
-        ("GET", "/api/users/0/items/PXW99EKT"): (200, "application/json", parent),
+        ("GET", "/api/itemTypes"): (
+            200,
+            "application/json",
+            [{"itemType": "journalArticle", "localized": "Journal Article"}],
+        ),
+        ("GET", "/api/users/0/items/trash"): (200, "application/json", []),
+        ("GET", "/api/users/0/items/PXW99EKT"): _item_pxw,
         ("GET", "/api/users/0/items/PDFATT01/file/view/url"): (
             200,
             "application/json",

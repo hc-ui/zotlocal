@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-08-13
+
+- `show`, `abstract`, `doi`, `csl`, `notes`, `types`, `stats`, `trash`
+- `missing-pdfs`, `dups`, `open`, `export -o`
+- `search --type --tag --year`
+- `bib -o FILE`
+- Item cards include DOI, abstract, tags, publication
+
 ## 0.1.1 — 2026-08-13
 
 - Parse Zotero Desktop tag objects (`tag` + `meta.numItems`) so `tags` prints names, not raw dicts

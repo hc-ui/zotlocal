@@ -44,6 +44,21 @@ def format_authors(creators: list[Any], *, max_names: int = 2) -> str:
     return f"{names[0]} et al."
 
 
+def tag_names(data: dict[str, Any]) -> list[str]:
+    raw = data.get("tags")
+    if not isinstance(raw, list):
+        return []
+    names: list[str] = []
+    for entry in raw:
+        if isinstance(entry, str) and entry.strip():
+            names.append(entry.strip())
+        elif isinstance(entry, dict):
+            name = str(entry.get("tag") or entry.get("name") or "").strip()
+            if name:
+                names.append(name)
+    return names
+
+
 @dataclass
 class Item:
     key: str
@@ -54,6 +69,13 @@ class Item:
     authors: str
     citekey: str
     parent_key: str = ""
+    doi: str = ""
+    url: str = ""
+    language: str = ""
+    abstract: str = ""
+    publication: str = ""
+    tags: list[str] = field(default_factory=list)
+    collection_keys: list[str] = field(default_factory=list)
     data: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -63,15 +85,29 @@ class Item:
         key = str(payload.get("key") or data.get("key") or "")
         date = str(data.get("date") or data.get("dateAdded") or "")
         creators = data.get("creators") if isinstance(data.get("creators"), list) else []
+        collections = data.get("collections") if isinstance(data.get("collections"), list) else []
         return cls(
             key=key,
             item_type=str(data.get("itemType") or payload.get("itemType") or ""),
-            title=str(data.get("title") or data.get("filename") or "").strip(),
+            title=str(data.get("title") or data.get("filename") or data.get("note") or "").strip(),
             date=date,
             year=year_from_date(date),
             authors=format_authors(creators),
             citekey=citekey_from_data(data),
             parent_key=str(data.get("parentItem") or ""),
+            doi=str(data.get("DOI") or data.get("doi") or "").strip(),
+            url=str(data.get("url") or "").strip(),
+            language=str(data.get("language") or "").strip(),
+            abstract=str(data.get("abstractNote") or "").strip(),
+            publication=str(
+                data.get("publicationTitle")
+                or data.get("bookTitle")
+                or data.get("proceedingsTitle")
+                or data.get("websiteTitle")
+                or ""
+            ).strip(),
+            tags=tag_names(data),
+            collection_keys=[str(x) for x in collections if x],
             data=data,
         )
 

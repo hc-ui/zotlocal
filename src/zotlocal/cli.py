@@ -3,13 +3,29 @@ from __future__ import annotations
 import argparse
 import sys
 
+import os
+import subprocess
+from pathlib import Path
+from urllib.parse import unquote, urlparse
+
 from . import DEFAULT_PORT, DEFAULT_TIMEOUT, __version__
 from .client import Client
 from .doctor import doctor
 from .errors import ZoteroDown, ZoteroHttpError, ZotlocalError
-from .format import dumps, item_payload, markdown_cite, print_collections, print_items, print_tags
+from .format import (
+    dumps,
+    item_payload,
+    markdown_cite,
+    print_card,
+    print_collections,
+    print_items,
+    print_tags,
+)
 from .models import Item
 from .pdf import find_pdfs
+from .reports import duplicate_citekeys, missing_pdfs
+from .stats import print_stats, summarize
+from .textutil import html_to_text
 
 DEFAULT_LIMIT = 25
 
@@ -92,6 +108,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_search = sub.add_parser("search", parents=[common], help="search library items")
     p_search.add_argument("query", metavar="QUERY")
+    p_search.add_argument("--type", dest="item_type", default="", metavar="TYPE")
+    p_search.add_argument("--tag", default="", metavar="TAG")
+    p_search.add_argument("--year", default="", metavar="YYYY")
     p_search.set_defaults(func=_cmd_search)
 
     p_item = sub.add_parser("item", parents=[common], help="show one item")
@@ -111,6 +130,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_bib = sub.add_parser("bib", parents=[common], help="export BibTeX")
     p_bib.add_argument("keys", nargs="*", metavar="KEY")
+    p_bib.add_argument("-o", "--out", default=None, metavar="FILE")
     p_bib.set_defaults(func=_cmd_bib)
 
     p_pdf = sub.add_parser("pdf", parents=[common], help="find PDF attachments")
@@ -123,6 +143,51 @@ def build_parser() -> argparse.ArgumentParser:
     p_cite = sub.add_parser("cite", parents=[common], help="print [@citekey] or [@itemKey]")
     p_cite.add_argument("query", metavar="QUERY")
     p_cite.set_defaults(func=_cmd_cite)
+
+    p_show = sub.add_parser("show", parents=[common], help="print a full item card")
+    p_show.add_argument("key", metavar="KEY")
+    p_show.set_defaults(func=_cmd_show)
+
+    p_abstract = sub.add_parser("abstract", parents=[common], help="print abstractNote")
+    p_abstract.add_argument("key", metavar="KEY")
+    p_abstract.set_defaults(func=_cmd_abstract)
+
+    p_doi = sub.add_parser("doi", parents=[common], help="print DOI")
+    p_doi.add_argument("key", metavar="KEY")
+    p_doi.set_defaults(func=_cmd_doi)
+
+    p_csl = sub.add_parser("csl", parents=[common], help="formatted citation via Zotero CSL")
+    p_csl.add_argument("key", metavar="KEY")
+    p_csl.add_argument("--style", default="apa", metavar="STYLE")
+    p_csl.set_defaults(func=_cmd_csl)
+
+    p_notes = sub.add_parser("notes", parents=[common], help="print child notes")
+    p_notes.add_argument("key", metavar="KEY")
+    p_notes.set_defaults(func=_cmd_notes)
+
+    p_types = sub.add_parser("types", parents=[common], help="list Zotero item types")
+    p_types.set_defaults(func=_cmd_types)
+
+    p_stats = sub.add_parser("stats", parents=[common], help="library counts by type/year")
+    p_stats.set_defaults(func=_cmd_stats)
+
+    p_trash = sub.add_parser("trash", parents=[common], help="list trashed items")
+    p_trash.set_defaults(func=_cmd_trash)
+
+    p_missing = sub.add_parser("missing-pdfs", parents=[common], help="top items with no PDF")
+    p_missing.set_defaults(func=_cmd_missing)
+
+    p_dups = sub.add_parser("dups", parents=[common], help="duplicate Better BibTeX citekeys")
+    p_dups.set_defaults(func=_cmd_dups)
+
+    p_open = sub.add_parser("open", parents=[common], help="open the first PDF in the OS")
+    p_open.add_argument("key", metavar="KEY")
+    p_open.set_defaults(func=_cmd_open)
+
+    p_export = sub.add_parser("export", parents=[common], help="write a collection (or library) to a .bib file")
+    p_export.add_argument("--collection", default="", metavar="KEY")
+    p_export.add_argument("-o", "--out", required=True, metavar="FILE")
+    p_export.set_defaults(func=_cmd_export)
 
     return parser
 
@@ -168,7 +233,13 @@ def _doctor_down(exc: ZoteroDown, json_mode: bool) -> int:
 
 
 def _cmd_search(args: argparse.Namespace, client: Client) -> int:
-    items = client.items(query=args.query, limit=_limit(args))
+    items = client.items(
+        query=args.query,
+        item_type=getattr(args, "item_type", "") or "",
+        tag=getattr(args, "tag", "") or "",
+        year=getattr(args, "year", "") or "",
+        limit=_limit(args),
+    )
     return _emit_items(items, _json(args))
 
 
@@ -228,11 +299,17 @@ def _cmd_tags(args: argparse.Namespace, client: Client) -> int:
 def _cmd_bib(args: argparse.Namespace, client: Client) -> int:
     keys = list(args.keys) if args.keys else None
     text = client.bibtex(keys, limit=_limit(args))
+    if text and not text.endswith("\n"):
+        text += "\n"
+    out = getattr(args, "out", None)
+    if out:
+        path = Path(out).expanduser()
+        path.write_text(text, encoding="utf-8", newline="\n")
+        print(f"wrote {path} ({text.count('@')} entries)")
+        return 0
     if _json(args):
         sys.stdout.write(dumps({"bibtex": text}))
         return 0
-    if text and not text.endswith("\n"):
-        text += "\n"
     sys.stdout.write(text)
     return 0
 
@@ -267,6 +344,180 @@ def _cmd_cite(args: argparse.Namespace, client: Client) -> int:
         return 0
     print(cite)
     return 0
+
+
+def _cmd_show(args: argparse.Namespace, client: Client) -> int:
+    item = client.item(args.key)
+    if _json(args):
+        sys.stdout.write(dumps(item_payload(item)))
+        return 0
+    sys.stdout.write(print_card(item))
+    return 0
+
+
+def _cmd_abstract(args: argparse.Namespace, client: Client) -> int:
+    item = client.item(args.key)
+    text = item.abstract
+    if _json(args):
+        sys.stdout.write(dumps({"key": item.key, "abstract": text}))
+        return 0
+    if not text:
+        print("no abstract")
+        return 1
+    print(text)
+    return 0
+
+
+def _cmd_doi(args: argparse.Namespace, client: Client) -> int:
+    item = client.item(args.key)
+    if _json(args):
+        sys.stdout.write(dumps({"key": item.key, "doi": item.doi}))
+        return 0
+    if not item.doi:
+        print("no doi", file=sys.stderr)
+        return 1
+    print(item.doi)
+    return 0
+
+
+def _cmd_csl(args: argparse.Namespace, client: Client) -> int:
+    text = client.citation(args.key, style=args.style)
+    if _json(args):
+        sys.stdout.write(dumps({"key": args.key, "style": args.style, "citation": text}))
+        return 0
+    if not text:
+        print("no citation", file=sys.stderr)
+        return 1
+    print(text)
+    return 0
+
+
+def _cmd_notes(args: argparse.Namespace, client: Client) -> int:
+    notes = client.child_notes(args.key)
+    rows = []
+    for note in notes:
+        rows.append(
+            {
+                "key": note.key,
+                "text": html_to_text(str(note.data.get("note") or "")),
+            }
+        )
+    if _json(args):
+        sys.stdout.write(dumps(rows))
+        return 0
+    if not rows:
+        print("no notes")
+        return 0
+    for index, row in enumerate(rows):
+        if index:
+            print()
+            print("---")
+        print(f"{row['key']}")
+        if row["text"]:
+            print(row["text"])
+    return 0
+
+
+def _cmd_types(args: argparse.Namespace, client: Client) -> int:
+    types = client.item_types()
+    if _json(args):
+        sys.stdout.write(dumps(types))
+        return 0
+    for row in types:
+        label = row["localized"] or row["itemType"]
+        print(f"{row['itemType']}  {label}")
+    return 0
+
+
+def _cmd_stats(args: argparse.Namespace, client: Client) -> int:
+    items = client.items(limit=max(_limit(args), 500))
+    summary = summarize(items)
+    if _json(args):
+        sys.stdout.write(dumps(summary))
+        return 0
+    sys.stdout.write(print_stats(summary))
+    return 0
+
+
+def _cmd_trash(args: argparse.Namespace, client: Client) -> int:
+    items = client.trash(limit=_limit(args))
+    return _emit_items(items, _json(args))
+
+
+def _cmd_missing(args: argparse.Namespace, client: Client) -> int:
+    items = client.items(limit=max(_limit(args), 200))
+    missing = missing_pdfs(client, items)
+    return _emit_items(missing, _json(args))
+
+
+def _cmd_dups(args: argparse.Namespace, client: Client) -> int:
+    items = client.items(limit=max(_limit(args), 500))
+    groups = duplicate_citekeys(items)
+    if _json(args):
+        payload = {
+            key: [item_payload(item) for item in rows] for key, rows in groups.items()
+        }
+        sys.stdout.write(dumps(payload))
+        return 0 if not groups else 1
+    if not groups:
+        print("no duplicate citekeys")
+        return 0
+    for key, rows in groups.items():
+        print(key)
+        for item in rows:
+            print("  " + item.row())
+    return 1
+
+
+def _cmd_open(args: argparse.Namespace, client: Client) -> int:
+    found = find_pdfs(client, args.key)
+    if not found:
+        print("no pdfs", file=sys.stderr)
+        return 1
+    url = found[0].get("url") or ""
+    path = _path_from_file_url(url)
+    if not path:
+        print("no local file url", file=sys.stderr)
+        return 1
+    _open_path(path)
+    print(path)
+    return 0
+
+
+def _cmd_export(args: argparse.Namespace, client: Client) -> int:
+    if args.collection:
+        items = client.items(collection=args.collection, limit=max(_limit(args), 500))
+        keys = [item.key for item in items]
+        text = client.bibtex(keys or None, limit=max(_limit(args), 500)) if keys else ""
+    else:
+        text = client.bibtex(None, limit=max(_limit(args), 500))
+    if text and not text.endswith("\n"):
+        text += "\n"
+    path = Path(args.out).expanduser()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8", newline="\n")
+    print(f"wrote {path} ({text.count('@')} entries)")
+    return 0
+
+
+def _path_from_file_url(url: str) -> str:
+    if not url:
+        return ""
+    if url.startswith("file:"):
+        parsed = urlparse(url)
+        path = unquote(parsed.path or "")
+        if os.name == "nt" and path.startswith("/") and len(path) > 2 and path[2] == ":":
+            path = path[1:]
+        return path.replace("/", os.sep) if os.name == "nt" else path
+    return url
+
+
+def _open_path(path: str) -> None:
+    if os.name == "nt":
+        os.startfile(path)  # type: ignore[attr-defined]
+        return
+    opener = "open" if sys.platform == "darwin" else "xdg-open"
+    subprocess.Popen([opener, path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def _emit_items(items: list[Item], json_mode: bool) -> int:

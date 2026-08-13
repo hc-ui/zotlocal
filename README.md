@@ -30,11 +30,15 @@ Package name: `zotlocal`. Requires Python 3.10+. No third-party dependencies.
 
 ```text
 zotlocal doctor
-zotlocal search "attention"
-zotlocal item PXW99EKT
-zotlocal collections --tree
-zotlocal bib PXW99EKT
-zotlocal pdf PXW99EKT
+zotlocal search "attention" --year 2017 --type journalArticle
+zotlocal show PXW99EKT
+zotlocal csl PXW99EKT --style apa
+zotlocal notes PXW99EKT
+zotlocal stats
+zotlocal missing-pdfs
+zotlocal dups
+zotlocal bib PXW99EKT -o refs.bib
+zotlocal export -o library.bib
 zotlocal cite "attention"
 ```
 
@@ -60,7 +64,7 @@ Find top-level items (attachments excluded when possible):
 
 ```bash
 zotlocal search "attention"
-zotlocal search "attention" --limit 10
+zotlocal search "attention" --limit 10 --type journalArticle --tag survey --year 2024
 ```
 
 ### item
@@ -113,6 +117,24 @@ zotlocal cite "Attention Is All You Need"
 ```
 
 If no citekey is stored, the Zotero item key is used (`[@PXW99EKT]`). Citekeys are never invented.
+
+### Library reports
+
+```bash
+zotlocal show PXW99EKT
+zotlocal abstract PXW99EKT
+zotlocal doi PXW99EKT
+zotlocal csl PXW99EKT --style apa
+zotlocal notes PXW99EKT
+zotlocal stats
+zotlocal types
+zotlocal trash
+zotlocal missing-pdfs
+zotlocal dups
+zotlocal open PXW99EKT
+zotlocal bib PXW99EKT -o refs.bib
+zotlocal export -o library.bib --collection AB12CD34
+```
 
 ### Other read-only commands
 

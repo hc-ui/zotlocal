@@ -72,12 +72,17 @@ class Client:
         query: str = "",
         collection: str = "",
         item_type: str = "",
+        tag: str = "",
+        year: str = "",
         limit: int = 25,
         sort: str = "dateModified",
         direction: str = "desc",
         top: bool = True,
+        trash: bool = False,
     ) -> list[Item]:
-        if collection:
+        if trash:
+            path = f"{LOCAL_USER}/items/trash"
+        elif collection:
             path = f"{LOCAL_USER}/collections/{collection}/items"
             if top:
                 path += "/top"
@@ -93,8 +98,17 @@ class Client:
             params["q"] = query
         if item_type:
             params["itemType"] = item_type
-        raw = self._paginate(path, params, limit=limit)
-        return [Item.from_api(row) for row in raw if isinstance(row, dict)]
+        if tag:
+            params["tag"] = tag
+        fetch_limit = limit
+        if year:
+            fetch_limit = max(limit, min(500, limit * 10))
+        raw = self._paginate(path, params, limit=fetch_limit)
+        items = [Item.from_api(row) for row in raw if isinstance(row, dict)]
+        if year:
+            want = str(year).strip()
+            items = [item for item in items if item.year == want]
+        return items[:limit]
 
     def item(self, key: str) -> Item:
         payload = self.get_json(f"{LOCAL_USER}/items/{key}")
@@ -123,6 +137,46 @@ class Client:
             params["itemKey"] = ",".join(keys)
             return self.get_text(f"{LOCAL_USER}/items", params)
         return self.get_text(f"{LOCAL_USER}/items/top", {**params, "limit": min(limit, 100)})
+
+    def item_types(self) -> list[dict[str, str]]:
+        raw = self.get_json("/api/itemTypes")
+        if not isinstance(raw, list):
+            return []
+        out: list[dict[str, str]] = []
+        for row in raw:
+            if isinstance(row, dict) and row.get("itemType"):
+                out.append(
+                    {
+                        "itemType": str(row.get("itemType") or ""),
+                        "localized": str(row.get("localized") or ""),
+                    }
+                )
+        return out
+
+    def trash(self, limit: int = 25) -> list[Item]:
+        return self.items(limit=limit, trash=True, top=False)
+
+    def citation(self, key: str, style: str = "apa") -> str:
+        payload = self.get_json(
+            f"{LOCAL_USER}/items/{key}",
+            {"include": "citation", "style": style},
+        )
+        if isinstance(payload, dict):
+            value = payload.get("citation")
+            if isinstance(value, str):
+                return value.strip()
+            if isinstance(value, dict):
+                return str(value.get("citation") or value.get("text") or "").strip()
+        return ""
+
+    def note_html(self, key: str) -> str:
+        item = self.item(key)
+        if item.item_type == "note":
+            return str(item.data.get("note") or "")
+        return ""
+
+    def child_notes(self, key: str) -> list[Item]:
+        return [child for child in self.children(key) if child.item_type == "note"]
 
     def file_url(self, attachment_key: str) -> str:
         payload = self.get_json(f"{LOCAL_USER}/items/{attachment_key}/file/view/url")

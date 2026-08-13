@@ -1,4 +1,4 @@
-# zotlocal spec (v0.1)
+# zotlocal spec (v0.2)
 
 Read-only CLI for **Zotero Desktop's local API** on `http://127.0.0.1:23119`.
 
@@ -30,6 +30,19 @@ only to the running desktop app.
 | `pdf KEY` | Find child attachments; print local file URL/path when asked |
 | `recent` | Newest items by dateModified |
 | `cite QUERY` | Print a markdown/pandoc citation from BBT key or title search |
+| `show KEY` | Full card: title, authors, DOI, abstract, tags |
+| `abstract KEY` / `doi KEY` | Single field |
+| `csl KEY --style apa` | Zotero-formatted citation |
+| `notes KEY` | Child notes as plain text |
+| `types` | Item type list |
+| `stats` | Counts by type / year / language |
+| `trash` | Trashed items |
+| `missing-pdfs` | Top items with no PDF child |
+| `dups` | Duplicate Better BibTeX citekeys |
+| `open KEY` | Open the first PDF in the OS |
+| `export -o FILE [--collection KEY]` | Write BibTeX to a file |
+| `search` | Also `--type` `--tag` `--year` |
+| `bib` | Also `-o FILE` |
 
 Global: `--json`, `--port`, `--timeout`, `--limit`
 

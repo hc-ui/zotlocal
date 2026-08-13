@@ -32,11 +32,15 @@ pip install -e .
 
 ```text
 zotlocal doctor
-zotlocal search "attention"
-zotlocal item PXW99EKT
-zotlocal collections --tree
-zotlocal bib PXW99EKT
-zotlocal pdf PXW99EKT
+zotlocal search "attention" --year 2017 --type journalArticle
+zotlocal show PXW99EKT
+zotlocal csl PXW99EKT --style apa
+zotlocal notes PXW99EKT
+zotlocal stats
+zotlocal missing-pdfs
+zotlocal dups
+zotlocal bib PXW99EKT -o refs.bib
+zotlocal export -o library.bib
 zotlocal cite "attention"
 ```
 

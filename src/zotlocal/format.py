@@ -20,7 +20,34 @@ def item_payload(item: Item) -> dict[str, Any]:
         "authors": item.authors,
         "date": item.date,
         "parentKey": item.parent_key,
+        "doi": item.doi,
+        "url": item.url,
+        "language": item.language,
+        "publication": item.publication,
+        "tags": list(item.tags),
+        "collections": list(item.collection_keys),
+        "abstract": item.abstract,
     }
+
+
+def print_card(item: Item) -> str:
+    lines = [
+        f"key:        {item.key}",
+        f"citekey:    {item.citekey or '-'}",
+        f"type:       {item.item_type or '-'}",
+        f"title:      {item.title or '-'}",
+        f"authors:    {item.authors or '-'}",
+        f"year:       {item.year or '-'}",
+        f"publication: {item.publication or '-'}",
+        f"doi:        {item.doi or '-'}",
+        f"url:        {item.url or '-'}",
+        f"language:   {item.language or '-'}",
+        f"tags:       {', '.join(item.tags) if item.tags else '-'}",
+    ]
+    if item.abstract:
+        lines.append("")
+        lines.append(item.abstract)
+    return "\n".join(lines) + "\n"
 
 
 def print_items(items: list[Item]) -> str:

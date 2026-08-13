@@ -1,6 +1,6 @@
 """zotlocal — read-only CLI for Zotero Desktop's local API."""
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 DEFAULT_PORT = 23119
 DEFAULT_TIMEOUT = 5.0
