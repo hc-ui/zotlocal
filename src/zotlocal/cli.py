@@ -35,8 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else list(argv)
     parser = build_parser()
     if not argv:
-        parser.print_help()
-        return 2
+        argv = ["doctor"]
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 — 2026-08-17
+
+- No arguments now runs `doctor` instead of printing help
+- Doctor tips are bilingual (en / 中文)
+
 ## 0.2.0 — 2026-08-13
 
 - `show`, `abstract`, `doi`, `csl`, `notes`, `types`, `stats`, `trash`

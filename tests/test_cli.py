@@ -61,6 +61,14 @@ def test_doctor_exit_1_when_connection_fails(
     assert run_cli(_args("doctor")) == 1
 
 
+def test_no_args_runs_doctor(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+) -> None:
+    install_opener(library_opener)
+    assert run_cli([]) == 0
+
+
 def test_bib_prints_mocked_bibtex(
     install_opener: Callable[[object], None],
     library_opener: FakeOpener,
