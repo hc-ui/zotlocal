@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zotlocal"
-version = "0.3.0"
+version = "0.3.1"
 description = "Read-only CLI for Zotero Desktop's local API. No Web API key. No cloud."
 readme = "README.md"
 license = { text = "MIT" }

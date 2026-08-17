@@ -22,6 +22,7 @@ Then run `zotlocal` (same as `zotlocal doctor`). Research desk:
 
 ```text
 zotlocal desk
+zotlocal desk --collection 待处理
 zotlocal draft PXW99EKT
 zotlocal draft "待处理"          # collection name or key
 zotlocal citekeys --missing

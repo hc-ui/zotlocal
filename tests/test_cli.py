@@ -95,7 +95,9 @@ def test_draft_item_does_not_invent_theme(
     assert "vaswani_attention_2017" in text
     assert "We propose a new simple network architecture" in text
     assert "theme：" in text
+    assert "zotero_key:" in text
     assert "不编造" in text or "不自动编造" in text
+    assert "zotero://open-pdf" in text or "未找到附件" in text
 
 
 def test_draft_collection_by_name(
@@ -108,6 +110,19 @@ def test_draft_collection_by_name(
     text = capsys.readouterr().out
     assert code == 0
     assert "PXW99EKT" in text
+
+
+def test_desk_collection_scope(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("desk", "--collection", "B"))
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "范围：" in text
+    assert "B" in text
 
 
 def test_citekeys_marks_missing(

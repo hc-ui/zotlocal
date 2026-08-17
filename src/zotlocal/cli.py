@@ -192,6 +192,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_export.set_defaults(func=_cmd_export)
 
     p_desk = sub.add_parser("desk", parents=[common], help="工作台：API、缺 PDF、缺引用键、重复键")
+    p_desk.add_argument(
+        "--collection",
+        default="",
+        metavar="名|KEY",
+        help="只看这个收藏夹",
+    )
     p_desk.set_defaults(func=_cmd_desk)
 
     p_draft = sub.add_parser("draft", parents=[common], help="中文精读草稿（只摘本地字段，不编造）")
@@ -520,11 +526,20 @@ def _cmd_export(args: argparse.Namespace, client: Client) -> int:
 
 
 def _cmd_desk(args: argparse.Namespace, client: Client) -> int:
-    items = client.items(limit=max(_limit(args), 200))
+    col_token = str(getattr(args, "collection", "") or "").strip()
+    scope = "全库抽查"
+    if col_token:
+        col = resolve_collection(client, col_token)
+        items = client.items(collection=col.key, limit=max(_limit(args), 200))
+        scope = col.path or col.name or col.key
+    else:
+        items = client.items(limit=max(_limit(args), 200))
     report = desk_report(client, items)
+    report["collection"] = scope
     if _json(args):
         payload = {
             "ok": report["ok"],
+            "collection": scope,
             "items": report["items"],
             "missing_pdfs": report["missing_pdfs"],
             "missing_citekeys": report["missing_citekeys"],
@@ -551,7 +566,19 @@ def _cmd_draft(args: argparse.Namespace, client: Client) -> int:
     if not items:
         print("no items", file=sys.stderr)
         return 1
-    text = render_drafts(items) if len(items) > 1 else render_draft(items[0])
+    names = _collection_name_map(client)
+    extras: dict[str, dict] = {}
+    for item in items:
+        pdf_key = ""
+        if len(items) == 1:
+            found = find_pdfs(client, item.key)
+            if found:
+                pdf_key = str(found[0].get("key") or "")
+        extras[item.key] = {
+            "pdf_key": pdf_key,
+            "collection_names": [names.get(key, key) for key in item.collection_keys],
+        }
+    text = render_drafts(items, extras=extras)
     if not text.endswith("\n"):
         text += "\n"
     out = getattr(args, "out", None)
@@ -609,6 +636,10 @@ def _cmd_citekeys(args: argparse.Namespace, client: Client) -> int:
 
 def _looks_item_key(token: str) -> bool:
     return len(token) == 8 and token.isalnum()
+
+
+def _collection_name_map(client: Client) -> dict[str, str]:
+    return {col.key: (col.path or col.name or col.key) for col in client.collections()}
 
 
 def _path_from_file_url(url: str) -> str:

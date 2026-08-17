@@ -22,6 +22,7 @@ pip install git+https://github.com/hc-ui/zotlocal.git
 
 ```text
 zotlocal desk
+zotlocal desk --collection 待处理
 zotlocal draft PXW99EKT
 zotlocal draft "待处理"          # 收藏夹名或 key
 zotlocal citekeys --missing

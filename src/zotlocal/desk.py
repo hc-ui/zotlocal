@@ -34,6 +34,7 @@ def render_desk(report: dict[str, Any]) -> str:
         lines.append("Zotero 本地 API：通。只读，不写文库。")
     else:
         lines.append("Zotero 本地 API：不通。先开桌面端并打开本地 API。")
+    lines.append(f"范围：{report.get('collection') or '全库抽查'}")
     lines.append(f"抽查条目：{report['items']}（不含附件/笔记）")
     lines.append(f"缺 PDF：{len(report['missing_pdfs'])}")
     lines.append(f"缺引用键：{len(report['missing_citekeys'])}")
@@ -56,5 +57,5 @@ def render_desk(report: dict[str, Any]) -> str:
             for item in rows:
                 lines.append(f"  - {item.row()}")
         lines.append("")
-    lines.append("下一步：`zotlocal draft KEY` 出中文草稿；`zotlocal missing-pdfs` / `citekeys` 看全表。")
+    lines.append("下一步：`zotlocal draft KEY` 出中文草稿；`zotlocal desk --collection 名` 收窄收藏夹。")
     return "\n".join(lines) + "\n"

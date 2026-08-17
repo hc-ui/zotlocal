@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 — 2026-08-17
+
+- `desk --collection 名` 只看一个收藏夹
+- `draft` 增加 YAML frontmatter、标签、收藏夹、PDF 深链（有附件时）
+
 ## 0.3.0 — 2026-08-17
 
 - `zotlocal desk`：工作台（API、缺 PDF、缺引用键、重复键）
