@@ -23,7 +23,10 @@ from .format import (
 )
 from .models import Item
 from .pdf import find_pdfs
+from .desk import desk_report, render_desk
+from .draft import render_draft, render_drafts
 from .reports import duplicate_citekeys, missing_pdfs
+from .resolve import missing_citekeys, parent_items, resolve_collection
 from .stats import print_stats, summarize
 from .textutil import html_to_text
 
@@ -97,7 +100,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="zotlocal",
-        description="Read-only CLI for Zotero Desktop's local API.",
+        description="本机 Zotero 只读助手：检索、缺 PDF、引用键、中文草稿。不上云、不写文库。",
         parents=[common],
     )
     sub = parser.add_subparsers(dest="command")
@@ -187,6 +190,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_export.add_argument("--collection", default="", metavar="KEY")
     p_export.add_argument("-o", "--out", required=True, metavar="FILE")
     p_export.set_defaults(func=_cmd_export)
+
+    p_desk = sub.add_parser("desk", parents=[common], help="工作台：API、缺 PDF、缺引用键、重复键")
+    p_desk.set_defaults(func=_cmd_desk)
+
+    p_draft = sub.add_parser("draft", parents=[common], help="中文精读草稿（只摘本地字段，不编造）")
+    p_draft.add_argument("target", metavar="KEY|收藏夹")
+    p_draft.add_argument(
+        "--collection",
+        action="store_true",
+        help="把 target 当成收藏夹名或 key",
+    )
+    p_draft.add_argument("-o", "--out", default=None, metavar="FILE")
+    p_draft.set_defaults(func=_cmd_draft)
+
+    p_keys = sub.add_parser("citekeys", parents=[common], help="列出有/无 Better BibTeX 引用键的条目")
+    p_keys.add_argument("--missing", action="store_true", help="只列出缺引用键的")
+    p_keys.set_defaults(func=_cmd_citekeys)
 
     return parser
 
@@ -497,6 +517,98 @@ def _cmd_export(args: argparse.Namespace, client: Client) -> int:
     path.write_text(text, encoding="utf-8", newline="\n")
     print(f"wrote {path} ({text.count('@')} entries)")
     return 0
+
+
+def _cmd_desk(args: argparse.Namespace, client: Client) -> int:
+    items = client.items(limit=max(_limit(args), 200))
+    report = desk_report(client, items)
+    if _json(args):
+        payload = {
+            "ok": report["ok"],
+            "items": report["items"],
+            "missing_pdfs": report["missing_pdfs"],
+            "missing_citekeys": report["missing_citekeys"],
+            "duplicate_citekeys": report["duplicate_citekeys"],
+            "doctor": report["doctor"],
+        }
+        sys.stdout.write(dumps(payload))
+        return 0 if report["ok"] else 1
+    sys.stdout.write(render_desk(report))
+    return 0 if report["ok"] else 1
+
+
+def _cmd_draft(args: argparse.Namespace, client: Client) -> int:
+    target = args.target.strip()
+    items: list[Item]
+    use_collection = bool(args.collection) or not _looks_item_key(target)
+    if use_collection:
+        col = resolve_collection(client, target)
+        items = parent_items(client.items(collection=col.key, limit=max(_limit(args), 200)))
+    else:
+        items = [client.item(target)]
+        if items[0].item_type in {"attachment", "note"}:
+            raise ZotlocalError(f"{target} is {items[0].item_type}, not a parent item")
+    if not items:
+        print("no items", file=sys.stderr)
+        return 1
+    text = render_drafts(items) if len(items) > 1 else render_draft(items[0])
+    if not text.endswith("\n"):
+        text += "\n"
+    out = getattr(args, "out", None)
+    if out:
+        path = Path(out).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8", newline="\n")
+        print(f"wrote {path}")
+        return 0
+    if _json(args):
+        sys.stdout.write(
+            dumps(
+                {
+                    "count": len(items),
+                    "keys": [item.key for item in items],
+                    "markdown": text,
+                }
+            )
+        )
+        return 0
+    sys.stdout.write(text)
+    return 0
+
+
+def _cmd_citekeys(args: argparse.Namespace, client: Client) -> int:
+    items = parent_items(client.items(limit=max(_limit(args), 200)))
+    missing = missing_citekeys(items)
+    if getattr(args, "missing", False):
+        rows = missing
+    else:
+        rows = items
+    if _json(args):
+        sys.stdout.write(
+            dumps(
+                [
+                    {
+                        "key": item.key,
+                        "citekey": item.citekey,
+                        "title": item.title,
+                        "missing": not bool(item.citekey),
+                    }
+                    for item in rows
+                ]
+            )
+        )
+        return 0 if not missing else 1
+    if not rows:
+        print("no items")
+        return 0
+    for item in rows:
+        mark = "MISSING" if not item.citekey else "OK"
+        print(f"{mark}  {item.row()}")
+    return 0 if not missing else 1
+
+
+def _looks_item_key(token: str) -> bool:
+    return len(token) == 8 and token.isalnum()
 
 
 def _path_from_file_url(url: str) -> str:

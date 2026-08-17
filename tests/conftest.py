@@ -185,6 +185,8 @@ def library_routes(
         ),
         ("GET", "/api/users/0/items/trash"): (200, "application/json", []),
         ("GET", "/api/users/0/items/PXW99EKT"): _item_pxw,
+        ("GET", "/api/users/0/items/BERT0001/children"): (200, "application/json", []),
+        ("GET", "/api/users/0/items/BERT0001"): (200, "application/json", by_key["BERT0001"]),
         ("GET", "/api/users/0/items/PDFATT01/file/view/url"): (
             200,
             "application/json",
@@ -192,6 +194,16 @@ def library_routes(
         ),
         ("GET", "/api/users/0/items/PDFATT01"): (200, "application/json", attachment),
         ("GET", "/api/users/0/items"): items_list,
+        ("GET", "/api/users/0/collections/COLLBBBB/items"): (
+            200,
+            "application/json",
+            [parent],
+        ),
+        ("GET", "/api/users/0/collections/COLLAAAA/items"): (
+            200,
+            "application/json",
+            [parent],
+        ),
         ("GET", "/api/users/0/collections"): (200, "application/json", collections),
         ("GET", "/api/users/0/tags"): (200, "application/json", []),
     }

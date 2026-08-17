@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 — 2026-08-17
+
+- `zotlocal desk`：工作台（API、缺 PDF、缺引用键、重复键）
+- `zotlocal draft KEY|收藏夹`：中文精读草稿，只摘本地字段，不编造 theme/methodology
+- `zotlocal citekeys`：列出有/无 Better BibTeX 引用键
+
 ## 0.2.1 — 2026-08-17
 
 - No arguments now runs `doctor` instead of printing help

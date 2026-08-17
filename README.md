@@ -18,7 +18,18 @@ Python 3.10+, zero third-party dependencies. Not on PyPI yet:
 pip install git+https://github.com/hc-ui/zotlocal.git
 ```
 
-Then run `zotlocal` (same as `zotlocal doctor`).
+Then run `zotlocal` (same as `zotlocal doctor`). Research desk:
+
+```text
+zotlocal desk
+zotlocal draft PXW99EKT
+zotlocal draft "待处理"          # collection name or key
+zotlocal citekeys --missing
+zotlocal missing-pdfs
+zotlocal dups
+```
+
+`draft` only copies local metadata and the abstract. It does not invent theme / methodology.
 
 ## Usage
 

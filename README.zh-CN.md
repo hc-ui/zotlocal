@@ -18,7 +18,18 @@ Python 3.10+，无第三方依赖。尚未上 PyPI：
 pip install git+https://github.com/hc-ui/zotlocal.git
 ```
 
-然后直接跑 `zotlocal`（等同 `zotlocal doctor`）。
+然后直接跑 `zotlocal`（等同 `zotlocal doctor`）。研究工作台：
+
+```text
+zotlocal desk
+zotlocal draft PXW99EKT
+zotlocal draft "待处理"          # 收藏夹名或 key
+zotlocal citekeys --missing
+zotlocal missing-pdfs
+zotlocal dups
+```
+
+`draft` 只摘本地字段和摘要，不编造 theme / methodology。留给你进 Vault 精读。
 
 ## 用法
 

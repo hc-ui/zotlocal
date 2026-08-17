@@ -69,6 +69,60 @@ def test_no_args_runs_doctor(
     assert run_cli([]) == 0
 
 
+def test_desk_lists_missing_citekey(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("desk"))
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "工作台" in text
+    assert "BERT0001" in text
+
+
+def test_draft_item_does_not_invent_theme(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("draft", "PXW99EKT"))
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "Attention Is All You Need" in text
+    assert "vaswani_attention_2017" in text
+    assert "We propose a new simple network architecture" in text
+    assert "theme：" in text
+    assert "不编造" in text or "不自动编造" in text
+
+
+def test_draft_collection_by_name(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("draft", "B"))
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "PXW99EKT" in text
+
+
+def test_citekeys_marks_missing(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("citekeys"))
+    text = capsys.readouterr().out
+    assert code == 1
+    assert "MISSING" in text
+    assert "BERT0001" in text
+
+
 def test_bib_prints_mocked_bibtex(
     install_opener: Callable[[object], None],
     library_opener: FakeOpener,
