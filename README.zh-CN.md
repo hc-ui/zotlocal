@@ -18,7 +18,7 @@ Python 3.10+，无第三方依赖。尚未上 PyPI：
 pip install git+https://github.com/hc-ui/zotlocal.git
 ```
 
-然后跑 `zotlocal doctor`。
+然后直接跑 `zotlocal`（等同 `zotlocal doctor`）。
 
 ## 用法
 

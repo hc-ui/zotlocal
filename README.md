@@ -18,7 +18,7 @@ Python 3.10+, zero third-party dependencies. Not on PyPI yet:
 pip install git+https://github.com/hc-ui/zotlocal.git
 ```
 
-Then: `zotlocal doctor`
+Then run `zotlocal` (same as `zotlocal doctor`).
 
 ## Usage
 
