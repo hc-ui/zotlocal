@@ -1,32 +1,24 @@
 # zotlocal
 
-面向 [Zotero](https://www.zotero.org/) Desktop **本地 API** 的只读命令行工具。
+面向 [Zotero](https://www.zotero.org/) Desktop **本地 API** 的只读命令行。不用 Web API key，不上云，不写文库。
 
 [English](README.md) | 简体中文
 
-## 运行条件
-
-必须先打开 Zotero Desktop，并开启本地 API：
+先打开 Zotero，并勾选：
 
 **设置 → 高级 → 允许此计算机上的其他应用程序与 Zotero 通信**
 
-（英文界面：Settings → Advanced → Allow other applications on this computer to communicate with Zotero）
-
-保持桌面端在运行。`zotlocal` 只跟这个进程对话。
-
-- 不需要 Zotero Web API key
-- 不读取 `prefs.js`
-- 不写入文库
+`zotlocal` 只访问 `127.0.0.1`，不读 `prefs.js`。
 
 ## 安装
 
-尚未发布到 PyPI。在本仓库目录中：
+Python 3.10+，无第三方依赖。尚未上 PyPI：
 
 ```bash
-pip install -e .
+pip install git+https://github.com/hc-ui/zotlocal.git
 ```
 
-包名：`zotlocal`。需要 Python 3.10+，无第三方依赖。
+然后跑 `zotlocal doctor`。
 
 ## 用法
 

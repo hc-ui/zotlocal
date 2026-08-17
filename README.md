@@ -1,30 +1,24 @@
 # zotlocal
 
-Read-only CLI for [Zotero](https://www.zotero.org/) Desktop’s local API.
+Read-only CLI for [Zotero](https://www.zotero.org/) Desktop’s local API. No Web API key. No cloud. Does not write your library.
 
 English | [简体中文](README.zh-CN.md)
 
-## Requirements
-
-Zotero Desktop must be running. Enable the local API in:
+Zotero must be running, with:
 
 **Settings → Advanced → Allow other applications on this computer to communicate with Zotero**
 
-Then keep the desktop app open. `zotlocal` talks only to that process.
-
-- No Zotero Web API key
-- Does not read `prefs.js`
-- Does not write the library
+`zotlocal` talks only to `127.0.0.1`. It does not read `prefs.js`.
 
 ## Install
 
-Not on PyPI yet. From a clone of this repo:
+Python 3.10+, zero third-party dependencies. Not on PyPI yet:
 
 ```bash
-pip install -e .
+pip install git+https://github.com/hc-ui/zotlocal.git
 ```
 
-Package name: `zotlocal`. Requires Python 3.10+. No third-party dependencies.
+Then: `zotlocal doctor`
 
 ## Usage
 
