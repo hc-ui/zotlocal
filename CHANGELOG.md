@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-08-18
+
+- `zotlocal next`：下一条该处理（先缺 PDF，再缺引用键）
+- `zotlocal select KEY`：用 `zotero://select` 在桌面端定位
+- `draft -o 目录/`：收藏夹一篇一篇落成 md
+- `desk -o report.md`：工作台报告存盘
+- `collection` / `citekeys` / `missing-pdfs` 都认收藏夹**名字**
+
 ## 0.3.1 — 2026-08-17
 
 - `desk --collection 名` 只看一个收藏夹

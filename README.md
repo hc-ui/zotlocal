@@ -22,11 +22,14 @@ Then run `zotlocal` (same as `zotlocal doctor`). Research desk:
 
 ```text
 zotlocal desk
-zotlocal desk --collection 待处理
+zotlocal desk --collection 待处理 -o desk.md
+zotlocal next --collection 待处理
 zotlocal draft PXW99EKT
-zotlocal draft "待处理"          # collection name or key
-zotlocal citekeys --missing
-zotlocal missing-pdfs
+zotlocal draft "待处理" -o notes/
+zotlocal select PXW99EKT
+zotlocal open PXW99EKT
+zotlocal citekeys --missing --collection 待处理
+zotlocal missing-pdfs --collection 待处理
 zotlocal dups
 ```
 

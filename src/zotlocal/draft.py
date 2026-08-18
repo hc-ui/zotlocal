@@ -1,6 +1,34 @@
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 from .models import Item
+
+
+def draft_filename(item: Item) -> str:
+    raw = item.citekey or item.key or "item"
+    safe = re.sub(r'[<>:"/\\|?*]', "_", raw).strip(" .") or item.key
+    return f"{safe}.md"
+
+
+def write_drafts(items: list[Item], directory: Path, extras: dict[str, dict] | None = None) -> list[Path]:
+    directory.mkdir(parents=True, exist_ok=True)
+    extras = extras or {}
+    written: list[Path] = []
+    for item in items:
+        extra = extras.get(item.key) or {}
+        text = render_draft(
+            item,
+            pdf_key=str(extra.get("pdf_key") or ""),
+            collection_names=list(extra.get("collection_names") or []),
+        )
+        if not text.endswith("\n"):
+            text += "\n"
+        path = directory / draft_filename(item)
+        path.write_text(text, encoding="utf-8", newline="\n")
+        written.append(path)
+    return written
 
 
 def render_draft(

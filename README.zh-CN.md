@@ -21,13 +21,12 @@ pip install git+https://github.com/hc-ui/zotlocal.git
 然后直接跑 `zotlocal`（等同 `zotlocal doctor`）。研究工作台：
 
 ```text
-zotlocal desk
-zotlocal desk --collection 待处理
-zotlocal draft PXW99EKT
-zotlocal draft "待处理"          # 收藏夹名或 key
-zotlocal citekeys --missing
-zotlocal missing-pdfs
-zotlocal dups
+zotlocal desk --collection 待处理 -o desk.md
+zotlocal next --collection 待处理
+zotlocal draft "待处理" -o notes/
+zotlocal select KEY
+zotlocal open KEY
+zotlocal citekeys --missing --collection 待处理
 ```
 
 `draft` 只摘本地字段和摘要，不编造 theme / methodology。留给你进 Vault 精读。

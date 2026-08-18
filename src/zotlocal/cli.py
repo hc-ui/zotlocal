@@ -24,7 +24,7 @@ from .format import (
 from .models import Item
 from .pdf import find_pdfs
 from .desk import desk_report, render_desk
-from .draft import render_draft, render_drafts
+from .draft import render_drafts, write_drafts
 from .reports import duplicate_citekeys, missing_pdfs
 from .resolve import missing_citekeys, parent_items, resolve_collection
 from .stats import print_stats, summarize
@@ -124,7 +124,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_cols.set_defaults(func=_cmd_collections)
 
     p_col = sub.add_parser("collection", parents=[common], help="list items in a collection")
-    p_col.add_argument("key", metavar="KEY")
+    p_col.add_argument("key", metavar="名|KEY")
     p_col.set_defaults(func=_cmd_collection)
 
     p_tags = sub.add_parser("tags", parents=[common], help="list tags")
@@ -177,6 +177,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_trash.set_defaults(func=_cmd_trash)
 
     p_missing = sub.add_parser("missing-pdfs", parents=[common], help="top items with no PDF")
+    p_missing.add_argument("--collection", default="", metavar="名|KEY")
     p_missing.set_defaults(func=_cmd_missing)
 
     p_dups = sub.add_parser("dups", parents=[common], help="duplicate Better BibTeX citekeys")
@@ -185,6 +186,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_open = sub.add_parser("open", parents=[common], help="open the first PDF in the OS")
     p_open.add_argument("key", metavar="KEY")
     p_open.set_defaults(func=_cmd_open)
+
+    p_select = sub.add_parser("select", parents=[common], help="在 Zotero 里定位这条目")
+    p_select.add_argument("key", metavar="KEY")
+    p_select.set_defaults(func=_cmd_select)
+
+    p_next = sub.add_parser("next", parents=[common], help="下一条该处理：缺 PDF 或缺引用键")
+    p_next.add_argument("--collection", default="", metavar="名|KEY")
+    p_next.set_defaults(func=_cmd_next)
 
     p_export = sub.add_parser("export", parents=[common], help="write a collection (or library) to a .bib file")
     p_export.add_argument("--collection", default="", metavar="KEY")
@@ -198,6 +207,7 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="名|KEY",
         help="只看这个收藏夹",
     )
+    p_desk.add_argument("-o", "--out", default=None, metavar="FILE")
     p_desk.set_defaults(func=_cmd_desk)
 
     p_draft = sub.add_parser("draft", parents=[common], help="中文精读草稿（只摘本地字段，不编造）")
@@ -212,6 +222,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_keys = sub.add_parser("citekeys", parents=[common], help="列出有/无 Better BibTeX 引用键的条目")
     p_keys.add_argument("--missing", action="store_true", help="只列出缺引用键的")
+    p_keys.add_argument("--collection", default="", metavar="名|KEY")
     p_keys.set_defaults(func=_cmd_citekeys)
 
     return parser
@@ -308,7 +319,8 @@ def _cmd_collections(args: argparse.Namespace, client: Client) -> int:
 
 
 def _cmd_collection(args: argparse.Namespace, client: Client) -> int:
-    items = client.items(collection=args.key, limit=_limit(args))
+    col = resolve_collection(client, args.key)
+    items = client.items(collection=col.key, limit=_limit(args))
     return _emit_items(items, _json(args))
 
 
@@ -470,7 +482,7 @@ def _cmd_trash(args: argparse.Namespace, client: Client) -> int:
 
 
 def _cmd_missing(args: argparse.Namespace, client: Client) -> int:
-    items = client.items(limit=max(_limit(args), 200))
+    items = _scoped_items(args, client)
     missing = missing_pdfs(client, items)
     return _emit_items(missing, _json(args))
 
@@ -509,9 +521,50 @@ def _cmd_open(args: argparse.Namespace, client: Client) -> int:
     return 0
 
 
+def _cmd_select(args: argparse.Namespace, client: Client) -> int:
+    item = client.item(args.key)
+    uri = f"zotero://select/library/items/{item.key}"
+    if _json(args):
+        sys.stdout.write(dumps({"key": item.key, "uri": uri}))
+        return 0
+    _open_path(uri)
+    print(uri)
+    return 0
+
+
+def _cmd_next(args: argparse.Namespace, client: Client) -> int:
+    items = parent_items(_scoped_items(args, client, floor=200))
+    missing = missing_pdfs(client, items)
+    no_key = missing_citekeys(items)
+    reason = ""
+    picked = None
+    if missing:
+        picked = missing[0]
+        reason = "缺 PDF"
+    elif no_key:
+        picked = no_key[0]
+        reason = "缺引用键"
+    if picked is None:
+        if _json(args):
+            sys.stdout.write(dumps({"item": None, "reason": "clean"}))
+            return 0
+        print("这批里没有缺 PDF / 缺引用键的条目。")
+        return 0
+    if _json(args):
+        sys.stdout.write(dumps({"reason": reason, "item": item_payload(picked)}))
+        return 1
+    print(f"下一步（{reason}）")
+    print(picked.row())
+    print(f"zotlocal draft {picked.key}")
+    print(f"zotlocal open {picked.key}")
+    print(f"zotlocal select {picked.key}")
+    return 1
+
+
 def _cmd_export(args: argparse.Namespace, client: Client) -> int:
     if args.collection:
-        items = client.items(collection=args.collection, limit=max(_limit(args), 500))
+        col = resolve_collection(client, args.collection)
+        items = client.items(collection=col.key, limit=max(_limit(args), 500))
         keys = [item.key for item in items]
         text = client.bibtex(keys or None, limit=max(_limit(args), 500)) if keys else ""
     else:
@@ -536,6 +589,14 @@ def _cmd_desk(args: argparse.Namespace, client: Client) -> int:
         items = client.items(limit=max(_limit(args), 200))
     report = desk_report(client, items)
     report["collection"] = scope
+    text = render_desk(report)
+    out = getattr(args, "out", None)
+    if out:
+        path = Path(out).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8", newline="\n")
+        print(f"wrote {path}")
+        return 0 if report["ok"] else 1
     if _json(args):
         payload = {
             "ok": report["ok"],
@@ -548,7 +609,7 @@ def _cmd_desk(args: argparse.Namespace, client: Client) -> int:
         }
         sys.stdout.write(dumps(payload))
         return 0 if report["ok"] else 1
-    sys.stdout.write(render_desk(report))
+    sys.stdout.write(text)
     return 0 if report["ok"] else 1
 
 
@@ -584,6 +645,13 @@ def _cmd_draft(args: argparse.Namespace, client: Client) -> int:
     out = getattr(args, "out", None)
     if out:
         path = Path(out).expanduser()
+        as_dir = path.exists() and path.is_dir() or str(out).endswith(("/", "\\")) or (
+            not path.suffix and len(items) > 1
+        )
+        if as_dir:
+            written = write_drafts(items, path, extras)
+            print(f"wrote {len(written)} file(s) in {path}")
+            return 0
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8", newline="\n")
         print(f"wrote {path}")
@@ -604,7 +672,7 @@ def _cmd_draft(args: argparse.Namespace, client: Client) -> int:
 
 
 def _cmd_citekeys(args: argparse.Namespace, client: Client) -> int:
-    items = parent_items(client.items(limit=max(_limit(args), 200)))
+    items = parent_items(_scoped_items(args, client, floor=200))
     missing = missing_citekeys(items)
     if getattr(args, "missing", False):
         rows = missing
@@ -636,6 +704,20 @@ def _cmd_citekeys(args: argparse.Namespace, client: Client) -> int:
 
 def _looks_item_key(token: str) -> bool:
     return len(token) == 8 and token.isalnum()
+
+
+def _scoped_items(
+    args: argparse.Namespace,
+    client: Client,
+    *,
+    floor: int = 200,
+) -> list[Item]:
+    token = str(getattr(args, "collection", "") or "").strip()
+    limit = max(_limit(args), floor)
+    if not token:
+        return client.items(limit=limit)
+    col = resolve_collection(client, token)
+    return client.items(collection=col.key, limit=limit)
 
 
 def _collection_name_map(client: Client) -> dict[str, str]:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 
@@ -136,6 +138,66 @@ def test_citekeys_marks_missing(
     assert code == 1
     assert "MISSING" in text
     assert "BERT0001" in text
+
+
+def test_next_picks_gap(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("next"))
+    text = capsys.readouterr().out
+    assert code == 1
+    assert "下一步" in text
+    assert "zotlocal draft" in text
+
+
+def test_select_json(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("select", "PXW99EKT", "--json"))
+    data = json.loads(capsys.readouterr().out)
+    assert code == 0
+    assert data["uri"].endswith("PXW99EKT")
+
+
+def test_draft_writes_directory(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    tmp_path: Path,
+) -> None:
+    install_opener(library_opener)
+    dest = tmp_path / "notes"
+    dest.mkdir()
+    assert run_cli(_args("draft", "PXW99EKT", "-o", str(dest))) == 0
+    assert (dest / "vaswani_attention_2017.md").is_file()
+
+
+def test_desk_writes_report(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    tmp_path: Path,
+) -> None:
+    install_opener(library_opener)
+    out = tmp_path / "desk.md"
+    assert run_cli(_args("desk", "-o", str(out))) == 0
+    assert "工作台" in out.read_text(encoding="utf-8")
+
+
+def test_collection_by_name(
+    install_opener: Callable[[object], None],
+    library_opener: FakeOpener,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    install_opener(library_opener)
+    code = run_cli(_args("collection", "B"))
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "PXW99EKT" in text
 
 
 def test_bib_prints_mocked_bibtex(
