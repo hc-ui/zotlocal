@@ -4,3 +4,7 @@ __version__ = "0.4.1"
 
 DEFAULT_PORT = 23119
 DEFAULT_TIMEOUT = 5.0
+
+from .netargs import install as _install_netargs
+
+_install_netargs()
