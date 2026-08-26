@@ -741,7 +741,10 @@ def _open_path(path: str) -> None:
         os.startfile(path)  # type: ignore[attr-defined]
         return
     opener = "open" if sys.platform == "darwin" else "xdg-open"
-    subprocess.Popen([opener, path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        subprocess.Popen([opener, path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except FileNotFoundError as exc:
+        raise ZotlocalError(f"cannot open {path}: {opener} not found") from exc
 
 
 def _emit_items(items: list[Item], json_mode: bool) -> int:

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — 2026-08-26
+
+- `open` / `select` no longer crash with a traceback if `xdg-open` / `open` is missing
+- Tests cover `file://` path decoding
+- CI now runs ruff on `src` and `tests`
+
 ## 0.4.0 — 2026-08-18
 
 - `zotlocal next`：下一条该处理（先缺 PDF，再缺引用键）
