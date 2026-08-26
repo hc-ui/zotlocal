@@ -26,3 +26,13 @@ def test_cli_limit_rejects_non_positive(
     assert "positive" in err
     assert main(["--limit", "-3", "search", "attention"]) == 2
     assert "positive" in capsys.readouterr().err
+
+
+def test_bib_creates_parent_dirs(install_opener, library_opener, tmp_path):
+    from zotlocal.cli import main
+
+    install_opener(library_opener)
+    dest = tmp_path / "nested" / "out.bib"
+    assert main(["--port", "9", "--timeout", "0.2", "bib", "PXW99EKT", "-o", str(dest)]) == 0
+    assert dest.is_file()
+    assert "@article" in dest.read_text(encoding="utf-8")

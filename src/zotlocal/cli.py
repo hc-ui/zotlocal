@@ -342,6 +342,7 @@ def _cmd_bib(args: argparse.Namespace, client: Client) -> int:
     out = getattr(args, "out", None)
     if out:
         path = Path(out).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8", newline="\n")
         print(f"wrote {path} ({text.count('@')} entries)")
         return 0
