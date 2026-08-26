@@ -35,7 +35,7 @@ ignore = ["E501"]
 zotlocal = "zotlocal.cli:main"
 
 [project.urls]
-# Homepage = "https://github.com/hc-ui/zotlocal"
+Homepage = "https://github.com/hc-ui/zotlocal"
 Issues = "https://github.com/hc-ui/zotlocal/issues"
 
 [tool.hatch.build.targets.wheel]
