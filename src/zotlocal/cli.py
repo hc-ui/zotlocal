@@ -12,6 +12,7 @@ from . import DEFAULT_PORT, DEFAULT_TIMEOUT, __version__
 from .client import Client
 from .doctor import doctor
 from .errors import ZoteroDown, ZoteroHttpError, ZotlocalError
+from .limits import require_positive_limit
 from .format import (
     dumps,
     item_payload,
@@ -229,7 +230,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _limit(args: argparse.Namespace) -> int:
-    return int(getattr(args, "limit", DEFAULT_LIMIT))
+    return require_positive_limit(int(getattr(args, "limit", DEFAULT_LIMIT)))
 
 
 def _json(args: argparse.Namespace) -> bool:

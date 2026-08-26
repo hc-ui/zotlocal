@@ -11,3 +11,18 @@ def test_require_positive_limit():
         require_positive_limit(0)
     with pytest.raises(ZotlocalError, match="positive"):
         require_positive_limit(-3)
+
+
+def test_cli_limit_rejects_non_positive(
+    install_opener,
+    library_opener,
+    capsys,
+):
+    from zotlocal.cli import main
+
+    install_opener(library_opener)
+    assert main(["--limit", "0", "search", "attention"]) == 2
+    err = capsys.readouterr().err
+    assert "positive" in err
+    assert main(["--limit", "-3", "search", "attention"]) == 2
+    assert "positive" in capsys.readouterr().err
